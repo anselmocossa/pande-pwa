@@ -6,13 +6,13 @@ export const useAuthStore = defineStore('auth', () => {
   })
   const isAutenticado = ref(false)
   const localLoading = ref(false)
-  const iniciaisUser = ref('')
+  const iniciaisUser = ref('AC')
 
   const xMoveMouse = ref(0)
   const timeoutDuration = ref(null)
   const minutos=ref(0)
 
-  const { fetch, fetchOnlyGet, statusCode} = useAxios()
+  const { fetch, fetchOnlyGet, statusCode,getToken} = useAxios()
 
   /**
    * @description verificar se o usuario tem Sessão
@@ -20,11 +20,11 @@ export const useAuthStore = defineStore('auth', () => {
    */
   const checkUserHasSession = async () => {
     localLoading.value = true
-    user.value = await fetchOnlyGet('user')
+    const hashCode = getToken
     localLoading.value = false
-    if (statusCode.value === 200) {
+    if (hashCode !== '') {
       isAutenticado.value == true
-      iniciaisUser.value =  user.value.nome.charAt(0)+user.value.apelido.charAt(0)
+      // iniciaisUser.value =  user.value.nome.charAt(0)+user.value.apelido.charAt(0)
       return true
     }
     return false
@@ -35,11 +35,10 @@ export const useAuthStore = defineStore('auth', () => {
    */
   const logout = async () => {
     localLoading.value = true
-    await fetch('logout', 'post')
     localLoading.value = false
     isAutenticado.value == false
     localStorage.removeItem("myToken")
-    window.location.href = "/auth/login"
+    window.location.href = "/auth"
   }
 
   /**

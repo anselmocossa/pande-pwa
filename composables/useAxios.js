@@ -66,7 +66,6 @@ export const useAxios = () => {
 
         try {
 
-            axios.defaults.headers.common['My-Salu-Token'] = getToken()            
             const myResponse = await axios({ method, url, data })
             response.value = myResponse.data
             statusCode.value = myResponse.status
@@ -95,7 +94,6 @@ export const useAxios = () => {
 
         try {
 
-            axios.defaults.headers.common['My-Salu-Token'] = getToken()
             axios.defaults.headers.common['Content-Type'] = 'multipart/form-data'
             const myResponse = await axios({ method, url, data })
             response.value = myResponse.data
@@ -121,7 +119,6 @@ export const useAxios = () => {
         messageError.value = ''
 
         try {
-            axios.defaults.headers.common['My-Salu-Token'] = getToken()
             const myResponse = await axios.get(url)
             response.value = myResponse.data
             statusCode.value = myResponse.status
@@ -133,7 +130,6 @@ export const useAxios = () => {
         }
     }
 
-
     /**
      * @description Aplicável apenas para métodos de solicitação 'DELETE'
      * @param {string} url
@@ -144,7 +140,6 @@ export const useAxios = () => {
         loading.value = true
         messageError.value = ''
         try {
-            axios.defaults.headers.common['My-Salu-Token'] = getToken()
             const myResponse = await axios.delete(url)
             response.value = myResponse.data
             statusCode.value = myResponse.status
@@ -180,7 +175,7 @@ export const useAxios = () => {
                     break
                 case 404:
                     localStorage.removeItem("myToken")
-                    window.location.href = "/auth/login"
+                    window.location.href = "/auth"
                     break
                 default:
                     messageError.value = 'Ocorreu um erro no servidor'
@@ -205,9 +200,7 @@ export const useAxios = () => {
         if (myToken === null) {
             return ''
         }
-        const fakeToken = myToken.split('$.')
-        const accessToken = (fakeToken[0]).split('WquPZkYa.')
-        return accessToken[0] + '' + accessToken[1];
+        return myToken
     }
 
     return {
@@ -219,6 +212,7 @@ export const useAxios = () => {
         statusCode,
         errors,
         response,
-        messageError        
+        messageError,
+        getToken
     }
 }
