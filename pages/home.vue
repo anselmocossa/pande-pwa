@@ -227,7 +227,7 @@ onUnmounted(() => {
       :movimentHistory="movimentHistory"
       :documentoResumed="documentoResumed"
       :loading-movimentes="loading"
-      :aneos="anexos"
+      :anexos="anexos"
       @close="dialog = false"
       @update:dialog="updateDialog"
   />
