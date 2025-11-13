@@ -34,6 +34,8 @@ const documentoPrincipal = ref(null)
 const acao = ref('enviar')
 const showAll = ref(false)
 const anexoModal = ref(false)
+const movimentoDetalhesDialog = ref(false)
+const movimentoSelecionado = ref(null)
 const items =
     [
       {title: 'Delegar', isVisible: true},
@@ -192,6 +194,11 @@ const finishDocument = async () => {
   }
 }
 
+const verDetalhesMovimento = (movimento) => {
+  movimentoSelecionado.value = movimento
+  movimentoDetalhesDialog.value = true
+}
+
 </script>
 <template>
   <v-dialog
@@ -283,6 +290,7 @@ const finishDocument = async () => {
           <v-btn
               block
               density="compact"
+              color="green-lighten-1"
               elevation="0"
               v-if="anexos.length > 3 && !showAll"
               @click="showAll = true"
@@ -322,10 +330,28 @@ const finishDocument = async () => {
               <v-card
                   :title="parseMovimentHistory(item.movimentHistory1).nome"
                   :subtitle="'Para: ' + parseMovimentHistory(item.movimentHistory1).para"
-                  :text="parseMovimentHistory(item.movimentHistory1).obs"
                   variant="flat"
+                  class="movimento-card"
               >
+                <v-card-text class="px-2 py-0">
+                  <div class="observacao-timeline-container">
+                    <p class="observacao-timeline-texto">
+                      {{ parseMovimentHistory(item.movimentHistory1).obs || 'Nenhuma observação' }}
+                    </p>
+                  </div>
+                </v-card-text>
                 <p class="text-caption pl-2">Data de registro: {{ formatDate(item.dateHistory) }}</p>
+                <v-card-actions>
+                  <v-btn
+                      color="primary"
+                      variant="text"
+                      size="small"
+                      @click="verDetalhesMovimento(item)"
+                  >
+                    Ver Detalhes
+                    <v-icon end>mdi-arrow-right</v-icon>
+                  </v-btn>
+                </v-card-actions>
               </v-card>
             </div>
           </v-timeline-item>
@@ -387,6 +413,74 @@ const finishDocument = async () => {
       @close="anexoModal = false"
       @update="updateDialog"
   />
+  <!-- Dialog para detalhes do movimento -->
+  <v-dialog
+      v-model="movimentoDetalhesDialog"
+      max-width="600"
+  >
+    <v-card v-if="movimentoSelecionado">
+      <v-card-title class="d-flex align-center pa-4">
+        <v-avatar
+            :color="getColor(movimentoSelecionado.movimentHistory1)"
+            size="40"
+            class="me-3"
+        >
+          {{ getInitials(movimentoSelecionado.movimentHistory1) }}
+        </v-avatar>
+        <span>Detalhes do Movimento</span>
+      </v-card-title>
+
+      <v-divider></v-divider>
+
+      <v-card-text class="pa-4">
+        <v-list>
+          <v-list-item>
+            <v-list-item-title class="font-weight-bold mb-2">Enviado por:</v-list-item-title>
+            <v-list-item-subtitle class="text-body-1">
+              {{ parseMovimentHistory(movimentoSelecionado.movimentHistory1).nome }}
+            </v-list-item-subtitle>
+          </v-list-item>
+
+          <v-list-item>
+            <v-list-item-title class="font-weight-bold mb-2">Para:</v-list-item-title>
+            <v-list-item-subtitle class="text-body-1">
+              {{ parseMovimentHistory(movimentoSelecionado.movimentHistory1).para }}
+            </v-list-item-subtitle>
+          </v-list-item>
+
+          <v-list-item>
+            <v-list-item-title class="font-weight-bold mb-2">Observação:</v-list-item-title>
+            <div class="observacao-container">
+              <p class="text-body-1 observacao-texto">
+                {{ parseMovimentHistory(movimentoSelecionado.movimentHistory1).obs || 'Nenhuma observação' }}
+              </p>
+            </div>
+          </v-list-item>
+
+          <v-list-item>
+            <v-list-item-title class="font-weight-bold mb-2">Data de Registro:</v-list-item-title>
+            <v-list-item-subtitle class="text-body-1">
+              {{ formatDate(movimentoSelecionado.dateHistory) }}
+            </v-list-item-subtitle>
+          </v-list-item>
+        </v-list>
+      </v-card-text>
+
+      <v-divider></v-divider>
+
+      <v-card-actions class="pa-4">
+        <v-spacer></v-spacer>
+        <v-btn
+            color="primary"
+            variant="elevated"
+            @click="movimentoDetalhesDialog = false"
+        >
+          Fechar
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
   <v-snackbar
       v-model="snackbar"
   >
@@ -411,6 +505,48 @@ const finishDocument = async () => {
 
 .text-black {
   color: #000000 !important;
+}
+
+.observacao-container {
+  width: 100%;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 8px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.observacao-texto {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-word;
+  margin: 0;
+}
+
+.movimento-card {
+  overflow: hidden;
+}
+
+.observacao-timeline-container {
+  width: calc(100% - 16px);
+  max-height: 150px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  margin: 8px 0;
+  box-sizing: border-box;
+}
+
+.observacao-timeline-texto {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-word;
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 </style>
 <!--UAPO/IT/1/2024-->

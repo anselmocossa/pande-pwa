@@ -58,17 +58,6 @@ const checkForNewDocuments = async () => {
     EventBus.$emit('documentsUpdated', currentCount);
   }
 };
-
-onMounted(async () => {
-  EventBus.$on('documentsUpdated', updateDocumentCount);
-
-  const intervalId = setInterval(checkForNewDocuments, 60000); // Verifica a cada minuto
-
-  onUnmounted(() => {
-    clearInterval(intervalId);
-    EventBus.$off('documentsUpdated', updateDocumentCount);
-  });
-});
 </script>
 
 <template>
@@ -91,9 +80,6 @@ onMounted(async () => {
         <slot/>
       </v-container>
     </v-main>
-
     <layout-footer :links-footer="linksFooter"/>
-    <!--    <layout-overlay-processing :overlay="authStore.localLoading  ? authStore.localLoading : loading" />-->
-
   </v-app>
 </template>

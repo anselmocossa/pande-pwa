@@ -37,6 +37,7 @@ const erros = ref({
 onMounted(async () => {
   await getTeamTo()
   await getUserTo()
+  console.log('Tomar conhecimento' + props.acao)
 })
 
 const getTeamTo = async () => {
@@ -61,6 +62,22 @@ const onSave = async () => {
   if (!validateForm()) {
     return
   }
+
+  const  conhecer = async () => {
+    await fetch('/Document/AddMovementToDocumentOutlook', 'POST', {
+      strHashCode: getToken(),
+      strDocumentNumber: props.strDocumentNumber,
+      intIDTeamTo: 0,
+      intIDUserTo: 0,
+      strDispatch: 'Movimento automático (Conhecimento de Documento) - '+ form.value.strObservations,
+      intIDWorkflowState: 254,
+      strConhecimentos: getConhecimentos(),
+    })
+    if (statusCode.value === 200) {
+      emits('update:dialog', false)
+    }
+  }
+
   switch (props.acao) {
     case 'enviar':
       await enviar()
@@ -70,6 +87,9 @@ const onSave = async () => {
       break
     case 'recolher':
       await recolher()
+      break
+    case 'conhecer':
+      await conhecer()
       break
   }
 }
@@ -162,6 +182,11 @@ const validateForm = () => {
             v-if="acao === 'recolher'"
             class="text-h5 text-medium-emphasis ps-2">
           Recolher documento
+        </div>
+        <div
+            v-if="acao === 'conhecer'"
+            class="text-h5 text-medium-emphasis ps-2">
+          Tomei conhecimento
         </div>
         <v-btn
             icon="mdi-close"

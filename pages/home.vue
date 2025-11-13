@@ -1,13 +1,13 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import {ref, computed, onMounted, onUnmounted} from 'vue';
 import Swal from 'sweetalert2';
-import { useAxios } from '@/composables/useAxios';
+import {useAxios} from '@/composables/useAxios';
 import DocumentCard from '../components/home/DocumentCard.vue';
 import DocumentDetails from '../components/home/DocumentDetails.vue';
 import EnviarServicoModal from '~/components/home/EnviarServicoModal.vue';
-import { EventBus } from '~/utils/eventBus';
+import {EventBus} from '~/utils/eventBus';
 
-const { fetch, getToken, response , loading} = useAxios();
+const {fetch, getToken, response, loading} = useAxios();
 const sendDialog = ref(false);
 const strDocumentNumber = ref('');
 const dialog = ref(false);
@@ -16,7 +16,7 @@ const documentoResumed = ref([]);
 const documentos = ref([]);
 const anexos = ref([]);
 const processing = ref(true);
-
+const handleAcao = ref('delegar');
 const fetchDocuments = async () => {
   await getMyDocuments();
 };
@@ -25,35 +25,48 @@ const updateDocuments = async () => {
   await getMyDocuments();
 };
 
-const getMyDocuments = async () => {
-  const strHashCode = getToken();
-  await fetch('MyDocumentsApp/listMyDocumentsApp', 'POST', {
-    strHashCode,
-    intPageRowSize: '30',
-    intCurrentPage: '1'
-  });
-
-  if (response && response.value) {
-    const documentPromises = response.value.map(async (item) => {
-      const historyResponse = await fetch('/Document/getDocumentHistoryResumed', 'POST', {
-        strHashCode: getToken(),
-        strDocumentIDEncrypted: item.idgdDocument
-      });
-
-      if (historyResponse) {
-        // Ordena por data de movimento e pega a última data
-        const sortedHistory = historyResponse.sort((a, b) => new Date(b.dateHistory) - new Date(a.dateHistory));
-        item.registryDate = sortedHistory.length > 0 ? sortedHistory[0].dateHistory : null;
+const getMyDocuments = async (url = '/MyDocumentsApp/listMyDocumentsApp') => {
+      const strHashCode = getToken();
+      if (url === '/MyTeams/listMyTeamDocumentsWithOrder') {
+        await fetch(url, 'POST', {
+          strHashCode,
+          intPageRowSize: '30',
+          intCurrentPage: '1',
+          intIDTeam: '10533',
+          strOrder: ''
+        });
+      } else {
+        await fetch(url, 'POST', {
+          strHashCode,
+          intPageRowSize: '30',
+          intCurrentPage: '1',
+          strSearch: ''
+        });
       }
-      return item;
-    });
 
-    // Aguarda todas as promessas serem resolvidas
-    documentos.value = await Promise.all(documentPromises);
-  } else {
-    documentos.value = [];
-  }
-};
+
+      if (response && response.value) {
+        const documentPromises = response.value.map(async (item) => {
+          const historyResponse = await fetch('/Document/getDocumentHistoryResumed', 'POST', {
+            strHashCode: getToken(),
+            strDocumentIDEncrypted: item.idgdDocument
+          });
+
+          if (historyResponse) {
+            // Ordena por data de movimento e pega a última data
+            const sortedHistory = historyResponse.sort((a, b) => new Date(b.dateHistory) - new Date(a.dateHistory));
+            item.registryDate = sortedHistory.length > 0 ? sortedHistory[0].dateHistory : null;
+          }
+          return item;
+        });
+
+        // Aguarda todas as promessas serem resolvidas
+        documentos.value = await Promise.all(documentPromises);
+      } else {
+        documentos.value = [];
+      }
+    }
+;
 
 const documentosGrouped = computed(() => {
   processing.value = true;
@@ -65,7 +78,7 @@ const documentosGrouped = computed(() => {
   const addToGroup = (label, document) => {
     let group = grouped.find(g => g.label === label);
     if (!group) {
-      group = { type: 'header', label, documents: [] };
+      group = {type: 'header', label, documents: []};
       grouped.push(group);
     }
     group.documents.push(document);
@@ -83,7 +96,7 @@ const documentosGrouped = computed(() => {
     } else if (docDate.getMonth() === today.getMonth() && docDate.getFullYear() === today.getFullYear()) {
       addToGroup('Este Mês', doc);
     } else {
-      const monthYear = `${docDate.toLocaleString('default', { month: 'long' })}, ${docDate.getFullYear()}`;
+      const monthYear = `${docDate.toLocaleString('default', {month: 'long'})}, ${docDate.getFullYear()}`;
       addToGroup(monthYear, doc);
     }
   });
@@ -137,12 +150,30 @@ onMounted(async () => {
 onUnmounted(() => {
   EventBus.$off('documentsUpdated', updateDocuments);
 });
+
+const updateTabs = (tabs) => {
+  if (tabs === 'Estão comigo') {
+    getMyDocuments();
+    handleAcao.value = 'delegar';
+  }
+  if (tabs === 'Estão no Departamento') {
+    getMyDocuments('/MyTeams/listMyTeamDocumentsWithOrder');
+    handleAcao.value = 'recolher';
+  }
+  if (tabs === 'Tomar Conhecimento') {
+    getMyDocuments('/Document/listAllMyDocumentsConhecimento');
+    handleAcao.value = 'conhecer';
+  }
+};
+
 </script>
 
 <template>
   <layout-top-nav-bar
+      :loading="processing"
       :as-tabs="true"
-      title="Sistema de Gestão Documental"/>
+      @update:tabs="updateTabs"
+  />
 
   <v-container style="height: 400px"
                v-if="processing"
@@ -156,15 +187,7 @@ onUnmounted(() => {
           class="text-subtitle-1 text-center"
           cols="12"
       >
-        Carregando documentos...
-      </v-col>
-      <v-col cols="6">
-        <v-progress-linear
-            color="green"
-            height="6"
-            indeterminate
-            rounded
-        ></v-progress-linear>
+        Carregar documentos...
       </v-col>
     </v-row>
   </v-container>
@@ -189,9 +212,10 @@ onUnmounted(() => {
               v-for="item in group.documents"
               :key="item.code"
               :document="item"
+              :show-avatar="handleAcao"
               @read-more="handleReadMore"
               @delegar="handleSend"
-
+              @conhecer="handleSend"
           />
         </v-row>
       </template>
@@ -235,7 +259,7 @@ onUnmounted(() => {
   <EnviarServicoModal
       @close="sendDialog = false"
       @update:dialog="updateDialog"
-      acao="delegar"
+      :acao="handleAcao"
       :is-active="sendDialog"
       :str-document-number="strDocumentNumber"
   />
@@ -254,6 +278,3 @@ onUnmounted(() => {
   color: #000000 !important;
 }
 </style>
-
-
-<!--&lt;!&ndash;@Sebulb@619&ndash;&gt;-->

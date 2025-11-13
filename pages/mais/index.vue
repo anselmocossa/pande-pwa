@@ -3,7 +3,9 @@
 </script>
 
 <template>
-  <layout-top-nav-bar title="Lista Documentos"></layout-top-nav-bar>
+  <layout-top-nav-bar
+    :as-tabs="false"
+  ></layout-top-nav-bar>
 </template>
 
 <style scoped>

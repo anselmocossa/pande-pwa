@@ -2,16 +2,32 @@
 import {getColor, getInitials} from '~/composables/utils.js'
 import {defineProps, defineEmits} from 'vue'
 
-const emits = defineEmits(['read-more', 'delegar'])
+const emits = defineEmits(['read-more', 'delegar', 'conhecer', 'recolher'])
 const props = defineProps({
   document: Object,
   cardDetails: {
     type: Boolean,
     default: true
+  },
+  showAvatar: {
+    type: String,
+    default: 'delegar'
   }
 })
 
+const windowWidth = ref(window.innerWidth);
 
+const updateWindowWidth = () => {
+  windowWidth.value = window.innerWidth;
+};
+
+onMounted(() => {
+  window.addEventListener('resize', updateWindowWidth);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateWindowWidth);
+});
 </script>
 
 <template>
@@ -22,12 +38,17 @@ const props = defineProps({
       border="1"
   >
     <v-card-title class="d-flex align-center">
-      <v-avatar :color="getColor(document.entityDoc)" color="primary" class="mr-3">
+      <v-avatar
+        v-if="showAvatar === 'delegar' || showAvatar === 'recolher'"
+          :color="getColor(document.entityDoc)" color="primary" class="mr-3">
         {{ getInitials(document.entityDoc) }}
       </v-avatar>
-      <div>
+      <div v-if="showAvatar === 'delegar' || showAvatar === 'recolher'">
         <div>{{ document.entityDoc }}</div>
         <div class="text-caption">{{ document.code }}</div>
+      </div>
+      <div v-else>
+        <div>{{ document.code }}</div>
       </div>
     </v-card-title>
     <v-card-text class="p-0 mb-1 pl-4">
@@ -38,12 +59,33 @@ const props = defineProps({
         <p class="text-caption mr-4">
           Data de entrega: {{ document.registryDate }}
         </p>
-        <v-btn color="primary" variant="text" @click="$emit('read-more', document.idgdDocument)">
+        <v-btn color="primary"
+               variant="text"
+               @click="$emit('read-more', document.idgdDocument)">
           Ler Mais
         </v-btn>
-        <v-btn color="primary" variant="text" @click="$emit('delegar', document.idgdDocument)">
+        <v-btn
+            color="primary"
+            variant="text"
+            v-if="showAvatar === 'delegar'"
+            @click="$emit('delegar', document.idgdDocument)">
           Delegar
         </v-btn>
+        <v-btn
+            color="primary"
+            variant="text"
+            v-if="showAvatar === 'conhecer'"
+            @click="$emit('conhecer', document.idgdDocument)">
+          {{ windowWidth < 600 ? 'Conhecer' : 'Tomar Conhecimento' }}
+        </v-btn>
+        <v-btn
+            color="primary"
+            variant="text"
+            v-if="showAvatar === 'recolher'"
+            @click="$emit('recolher', document.idgdDocument)">
+          {{ windowWidth < 600 ? 'Recolher' : 'Recolher Documento' }}
+        </v-btn>
+
       </div>
     </template>
   </v-card>

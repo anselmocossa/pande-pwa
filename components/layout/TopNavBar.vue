@@ -1,154 +1,104 @@
 <script setup>
-import {onMounted} from "vue";
+import {ref, onMounted} from 'vue';
+import logoPane from '../../assets/mainlogo.png';
+import {getColor, getInitials} from '~/composables/utils.js'
 
-const authStore = useAuthStore()
-import img from '@/assets/logo.png'
-
-const emit = defineEmits(['pesquisa', 'update:tabs'])
+const authStore = useAuthStore();
+const emit = defineEmits(['update:tabs']);
 const props = defineProps({
-  title: {
-    type: String,
-    required: true
-  },
-  pesquisa: {
+  asTabs: {
     type: Boolean,
-    default: false
-  },
-  search: {
-    type: String,
-    default: ''
+    default: true
   },
   loading: {
     type: Boolean,
     default: false
   },
-  asTabs: {
-    type: Boolean,
-    default: false
-  },
-  tabs: {
-    type: Number,
-    default: 1
-  }
-})
-const search = ref(props.search)
-const drawer = ref(false)
-const selectedTab = ref(1)
-onMounted(() => {
-  selectedTab.value = props.tabs
-})
-function toggleDrawer() {
-  drawer.value = !drawer.value
-}
+});
 
-function navigateTo(route) {
-  // Adicione a navegação para a rota desejada
-  // Exemplo: this.$router.push(route)
+const drawer = ref(false);
+const selectedTab = ref('Estão comigo'); // Define a aba selecionada como string vazia
+const opcoes = [
+  'Estão comigo',
+  'Estão no Departamento',
+  'Tomar Conhecimento'
+];
+
+function toggleDrawer() {
+  drawer.value = !drawer.value;
 }
 
 function updateTabs(value) {
-  selectedTab.value = value
-  emit('update:tabs', value)
+  selectedTab.value = value;
+  emit('update:tabs', value);
 }
-
-watch(() => search.value, (value) => {
-  emit('pesquisa', value)
-})
 </script>
 
-
 <template>
-  <v-app-bar color="#5c90da" :elevation="1">
-    <template v-slot:prepend>
-      <v-app-bar-nav-icon @click="toggleDrawer"/>
-    </template>
-    <v-app-bar-title v-if="!pesquisa" @click="toggleDrawer">
-      {{ title }}
-    </v-app-bar-title>
-    <v-text-field
-        :loading="loading"
-        v-if="pesquisa"
-        class="mx-6"
-        v-model="search"
-        clearable
-        append-icon="mdi-magnify"
-        label="Pesquisar"
-        single-line
-        variant="solo"
-        hide-details
-    />
-    <v-btn icon="" @click="authStore.logout()">
-      <v-icon>mdi-export</v-icon>
-    </v-btn>
+  <v-app-bar color="white" class="modern-app-bar" :elevation="1">
+    <!-- Ícone de menu no lado esquerdo -->
+    <v-app-bar-nav-icon @click="toggleDrawer"/>
+    <!-- Logo -->
+    <v-img :lazy-src="logoPane"
+           :src="logoPane"
+           alt="Pande"
+           max-width="180"/>
+    <v-spacer></v-spacer>
 
-    <template
-        v-if="asTabs"
-        v-slot:extension>
-      <v-slide-group
-          show-arrows
-      >
-        <v-slide-group-item
-            v-for="n in 3"
-            :key="n"
-            v-slot="{ isSelected, toggle }"
+    <!-- Botão de filtro no lado direito -->
+    <v-menu v-if="asTabs">
+      <template v-slot:activator="{ props }">
+        <v-btn
+            icon="mdi-filter-variant"
+            v-bind="props"
         >
-          <v-btn
-              :color="isSelected ? 'primary' : undefined"
-              class="ma-2"
-              rounded
-              @click="toggle"
+        </v-btn>
+      </template>
+      <v-list>
+        <v-list-item
+            v-for="(item, index) in opcoes"
+            :key="index"
+            :value="index"
+        >
+          <v-list-item-title
+              @click="updateTabs(item)"
           >
-            Options {{ n }}
-          </v-btn>
-        </v-slide-group-item>
-      </v-slide-group>
-
-<!--      <v-chip-group-->
-<!--          v-model:active-chips="selectedTab"-->
-<!--          color="white"-->
-<!--          variant="flat"-->
-<!--          mandatory-->
-<!--          column-->
-<!--          class="custom-chip-group"-->
-<!--      >-->
-<!--        <v-chip-->
-<!--            :value="1"-->
-<!--            @click="updateTabs(1)"-->
-<!--            class="custom-chip"-->
-<!--        >-->
-<!--          <v-icon left>mdi-office-building</v-icon>-->
-<!--          Departamento-->
-<!--        </v-chip>-->
-
-<!--        <v-chip-->
-<!--            :value="2"-->
-<!--            @click="updateTabs(2)"-->
-<!--            class="custom-chip"-->
-<!--        >-->
-<!--          <v-icon left>mdi-book-open-page-variant</v-icon>-->
-<!--          Conhecimentos-->
-<!--        </v-chip>-->
-
-<!--        <v-chip-->
-<!--            :value="3"-->
-<!--            @click="updateTabs(3)"-->
-<!--            class="custom-chip"-->
-<!--        >-->
-<!--          <v-icon left>mdi-account-multiple</v-icon>-->
-<!--          Delegados-->
-<!--        </v-chip>-->
-<!--      </v-chip-group>-->
-      <v-spacer/>
-    </template>
+            {{ item }}
+          </v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-menu>
+    <v-progress-linear
+        v-if="loading"
+        indeterminate
+        color="primary"
+        class="progress-bar"
+        height="4"
+    />
   </v-app-bar>
+  <!-- Barra de carregamento na parte inferior do app-bar -->
 
+  <!-- Chip para mostrar a aba selecionada -->
+  <v-chip
+      v-if="asTabs"
+      :text="selectedTab"></v-chip>
+  <!-- Navigation Drawer -->
   <v-navigation-drawer v-model="drawer" app>
-    <v-sheet class="pa-4" color="grey-lighten-4">
-      <div>john@google.com</div>
+    <!-- Informações do usuário e Avatar -->
+    <v-sheet class="pa-4 d-flex align-center" color="grey-lighten-4">
+      <!-- Avatar com cor dinâmica e iniciais -->
+      <v-avatar :color="getColor(authStore.user.nomeUtilizador)" class="mr-3">
+        {{ getInitials(authStore.user.nomeUtilizador) }}
+      </v-avatar>
+      <div>
+        <div>{{ authStore.user.email || 'Email não disponível' }}</div>
+        <div>{{ authStore.user.nomeUtilizador || 'Nome não disponível' }}</div>
+      </div>
     </v-sheet>
 
     <v-divider></v-divider>
 
+    <!-- Lista de navegação -->
     <v-list>
       <v-list-item @click="navigateTo('/about')" prepend-icon="mdi-earth">
         <v-list-item-title>Sobre</v-list-item-title>
@@ -164,23 +114,35 @@ watch(() => search.value, (value) => {
 </template>
 
 <style scoped>
-.custom-chip-group .v-chip {
-  color: white; /* Cor do texto dos chips */
-  background-color: transparent; /* Fundo transparente para chips não selecionados */
+.modern-app-bar {
+  background-color: #3b82f6;
+  color: white;
+  transition: background-color 0.3s ease;
+  position: relative;
 }
 
-.custom-chip-group .v-chip.v-chip--active {
-  color: white; /* Cor do texto dos chips selecionados */
-  background-color: green; /* Fundo verde para chips selecionados */
+.modern-app-bar:hover {
+  background-color: #2563eb;
 }
 
-.custom-chip-group .v-icon {
-  color: inherit; /* Garante que o ícone herde a cor do texto do chip */
+.v-btn {
+  transition: all 0.2s ease-in-out;
 }
 
-a {
-  background-color: transparent;
-  cursor: pointer;
-  text-decoration: none;
+.v-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.v-navigation-drawer {
+  background-color: #f3f4f6;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
 }
 </style>
