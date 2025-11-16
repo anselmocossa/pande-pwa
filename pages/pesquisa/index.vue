@@ -509,7 +509,7 @@ const activeFilterName = computed(() => {
       :dialog="dialog"
       :movimentHistory="movimentHistory"
       :documentoResumed="documentoResumed"
-      :aneos="anexos"
+      :anexos="anexos"
       :alterar-estado="false"
       @close="dialog = false"
       @update:dialog="updateDialog"
